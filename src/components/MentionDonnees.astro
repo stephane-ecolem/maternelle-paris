@@ -1,0 +1,10 @@
+---
+import { META, formaterDate } from '../lib/donnees';
+interface Props { secteurs?: boolean }
+const { secteurs = false } = Astro.props;
+---
+<p class="text-sm text-gris">
+  Données : annuaire de l'éducation (ministère de l'Éducation nationale), date d'extraction : {formaterDate(META.annuaire)}
+  {secteurs && <>; secteurs scolaires des écoles maternelles (Ville de Paris, opendata.paris.fr), date d'extraction : {formaterDate(META.secteurs)}</>}.
+  Attributs pédagogiques relevés par l'éditeur sur les sites des écoles, source et date indiquées pour chaque école.
+</p>

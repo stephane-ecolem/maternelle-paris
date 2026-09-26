@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /shortlist/
+Disallow: /merci/
+
+Sitemap: https://maternelle.paris/sitemap-index.xml

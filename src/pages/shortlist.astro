@@ -1,0 +1,254 @@
+---
+import Base from '../layouts/Base.astro';
+import AvertissementSecteur from '../components/AvertissementSecteur.astro';
+import MentionDonnees from '../components/MentionDonnees.astro';
+import { ARRONDISSEMENTS } from '../lib/arrondissements';
+import { SITE, HUBSPOT, hubspotActif, GEOCODEUR, SCORE_MIN_GEOCODAGE } from '../config';
+import { META } from '../lib/donnees';
+import adjacence from '../data/adjacence.json';
+
+const config = {
+  geocodeur: GEOCODEUR,
+  scoreMin: SCORE_MIN_GEOCODAGE,
+  hubspot: hubspotActif() ? { portalId: HUBSPOT.portalId, formId: HUBSPOT.formId, proprietes: HUBSPOT.proprietes } : null,
+  source: HUBSPOT.valeurSource,
+  adjacence,
+  arrondissements: ARRONDISSEMENTS.map((a) => ({ numero: a.numero, codesPostaux: a.codesPostaux, slug: a.slug, mairie: a.mairie })),
+  secteursDate: META.secteurs,
+};
+---
+<Base title="Votre sélection d'écoles maternelles à Paris" description="Écoles maternelles proches de votre adresse à Paris, avec l'école de secteur et la raison de la présence de chaque école." noindex>
+  <div class="conteneur py-8">
+    <h1 class="text-3xl">Votre sélection d'écoles maternelles</h1>
+    <div id="etat" class="mt-4" aria-live="polite">
+      <noscript>
+        <p class="rounded border border-ligne bg-white p-4">
+          La recherche par adresse nécessite JavaScript. Vous pouvez consulter la liste complète des écoles
+          <a href="/#arrondissements">par arrondissement</a>.
+        </p>
+      </noscript>
+    </div>
+
+    <div id="resultat" hidden>
+      <p id="adresse-retenue" class="text-lg"></p>
+      <p id="repli" class="mt-2 hidden rounded border border-ligne bg-white p-3 text-sm"></p>
+      <p id="autre-annee" class="mt-2 hidden rounded border border-ligne bg-white p-3 text-sm">
+        Pour un enfant né une autre année, les règles d'admission diffèrent :
+        consultez <a href="/dossier/scolarisation-2-ans/">notre dossier sur la scolarisation à Paris</a>.
+      </p>
+      <div id="bloc-secteur" class="mt-4 hidden"><AvertissementSecteur /></div>
+      <p class="mt-4 text-sm text-gris">
+        Ordre de la liste : l'école de secteur d'abord, puis les autres écoles par distance croissante, puis les écoles publiques hors secteur.
+        Aucune école n'est mise en avant dans cette liste.
+      </p>
+      <ol id="liste" class="mt-4 space-y-3"></ol>
+      <p id="vide" class="mt-4 hidden rounded border border-ligne bg-white p-4"></p>
+
+      <aside id="encart" class="my-8 hidden rounded-lg border-2 border-dashed border-gris bg-editeur p-5" aria-labelledby="encart-titre">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gris">Encart de l'éditeur</p>
+        <h2 id="encart-titre" class="mt-1 text-lg">Les écoles de {SITE.editeur.nom}, éditeur de ce site</h2>
+        <span class="mt-2 inline-block rounded border border-ligne bg-white px-3 py-1 font-display text-sm">[LOGO ÉCOLE M]</span>
+        <ul id="encart-liste" class="mt-3 space-y-1"></ul>
+        <p class="mt-3 text-sm text-gris">Cet encart est publié par l'éditeur. Il n'influence ni la liste ni son ordre.</p>
+      </aside>
+
+      <section class="mt-10 max-w-xl rounded-lg border border-accent bg-white p-5" aria-labelledby="capture-titre">
+        <h2 id="capture-titre" class="text-xl">Recevoir cette sélection par email</h2>
+        <p class="mt-2">Vous recevez cette liste et le calendrier complet de la scolarisation à Paris pour la rentrée {SITE.rentree}.</p>
+        <form id="capture" name="shortlist" method="POST" action="/merci/" data-netlify="true" netlify-honeypot="site_web" class="mt-4 space-y-4">
+          <input type="hidden" name="form-name" value="shortlist" />
+          <input type="hidden" name="code_postal" />
+          <input type="hidden" name="annee_naissance" />
+          <input type="hidden" name="critere" />
+          <input type="hidden" name="shortlist_uai" />
+          <input type="hidden" name="source" value={HUBSPOT.valeurSource} />
+          <p class="hidden"><label>Ne pas remplir <input name="site_web" tabindex="-1" autocomplete="off" /></label></p>
+          <div>
+            <label for="email" class="font-semibold">Votre email</label>
+            <input id="email" name="email" type="email" required autocomplete="email" class="champ mt-1" />
+          </div>
+          <div class="flex gap-3">
+            <input id="consentement" name="consentement" type="checkbox" required value="oui" class="mt-1 h-5 w-5 shrink-0" />
+            <label for="consentement" class="text-sm">
+              [TEXTE DE CONSENTEMENT HUBSPOT] J'accepte de recevoir cette sélection et des informations sur la scolarisation à Paris de la part de {SITE.editeur.raisonSociale} ({SITE.editeur.nom}). Désinscription possible à tout moment.{' '}
+              <a href="/confidentialite/">Politique de confidentialité</a>.
+            </label>
+          </div>
+          <button type="submit" class="bouton">Recevoir la sélection</button>
+          <p id="capture-etat" class="text-sm" aria-live="polite"></p>
+        </form>
+      </section>
+      <div class="mt-8"><MentionDonnees secteurs /></div>
+    </div>
+  </div>
+  <script type="application/json" id="config-shortlist" set:html={JSON.stringify(config)} />
+</Base>
+
+<script>
+  import { construireShortlist, type Critere, type Secteur, type Resultat } from '../lib/shortlist';
+  import type { Ecole } from '../lib/types';
+  import type { Position } from '../lib/geo';
+  import { ecolesMPour } from '../lib/encart';
+
+  const cfg = JSON.parse(document.getElementById('config-shortlist')!.textContent!);
+  const $ = (id: string) => document.getElementById(id)!;
+  const params = new URLSearchParams(location.search);
+  const adresse = (params.get('adresse') ?? '').trim();
+  const annee = params.get('annee') ?? '';
+  const critere = (params.get('critere') ?? 'indifferent') as Critere;
+
+  const el = (tag: string, texte?: string, classe?: string) => {
+    const n = document.createElement(tag);
+    if (texte) n.textContent = texte;
+    if (classe) n.className = classe;
+    return n;
+  };
+
+  function codePostalDe(texte: string): string | null {
+    return texte.match(/\b75\d{3}\b/)?.[0] ?? null;
+  }
+  const arrDeCp = (cp: string | null) =>
+    cp ? cfg.arrondissements.find((a: { codesPostaux: string[] }) => a.codesPostaux.includes(cp)) ?? null : null;
+
+  async function geocoder(q: string): Promise<{ position: Position; cp: string; label: string } | null> {
+    try {
+      const r = await fetch(`${cfg.geocodeur}?q=${encodeURIComponent(q)}&limit=1`);
+      if (!r.ok) return null;
+      const f = (await r.json()).features?.[0];
+      if (!f || f.properties.score < cfg.scoreMin || !arrDeCp(f.properties.postcode)) return null;
+      return { position: f.geometry.coordinates, cp: f.properties.postcode, label: f.properties.label };
+    } catch {
+      return null;
+    }
+  }
+
+  function afficherListe(resultats: Resultat[]) {
+    const liste = $('liste');
+    for (const r of resultats) {
+      const li = el('li', undefined, 'rounded-lg border border-ligne bg-white p-4');
+      if (r.groupe === 'secteur') li.classList.add('border-accent', 'border-2');
+      const titre = el('p', r.ecole.nom, 'font-display text-lg font-semibold');
+      li.append(titre);
+      li.append(el('p', `${r.ecole.adresse}, ${r.ecole.codePostal} Paris · ${r.ecole.statut === 'public' ? 'Public' : `Privé${r.ecole.contrat ? ' ' + r.ecole.contrat : ''}`}`, 'text-sm text-gris'));
+      const ul = el('ul', undefined, 'mt-2 list-disc pl-5 text-sm');
+      r.raisons.forEach((t) => ul.append(el('li', t)));
+      li.append(ul);
+      liste.append(li);
+    }
+  }
+
+  function afficherEncart(arr: number) {
+    const choisies = ecolesMPour(arr);
+    if (!choisies.length) return;
+    const ul = $('encart-liste');
+    for (const e of choisies) ul.append(el('li', `${e.nom}, ${e.adresse}`));
+    $('encart').classList.remove('hidden');
+  }
+
+  async function lancer() {
+    if (!adresse) {
+      $('etat').textContent = 'Aucune adresse saisie. ';
+      const a = el('a', 'Revenir au formulaire') as HTMLAnchorElement;
+      a.href = '/#shortlist';
+      $('etat').append(a);
+      return;
+    }
+    $('etat').textContent = 'Recherche en cours…';
+    const [ecoles, secteursGeo, geo] = await Promise.all([
+      fetch('/data/ecoles.json').then((r) => r.json() as Promise<Ecole[]>),
+      fetch('/data/secteurs.geojson').then((r) => r.json()),
+      geocoder(adresse),
+    ]);
+    const secteurs: Secteur[] = secteursGeo.features.map((f: { properties: { idEcole: string }; geometry: Secteur['geometrie'] }) => ({ idEcole: f.properties.idEcole, geometrie: f.geometry }));
+
+    const cp = geo?.cp ?? codePostalDe(adresse);
+    const arr = arrDeCp(cp);
+    if (!arr) {
+      $('etat').textContent = 'Cette adresse n’a pas pu être située à Paris. Indiquez une adresse parisienne avec son code postal (75001 à 75020).';
+      return;
+    }
+    $('etat').textContent = '';
+    $('resultat').hidden = false;
+    if (geo) {
+      $('adresse-retenue').textContent = `Adresse retenue : ${geo.label}. Vérifiez qu’il s’agit bien de la vôtre.`;
+      $('bloc-secteur').classList.remove('hidden');
+    } else {
+      $('adresse-retenue').textContent = `Code postal retenu : ${cp}.`;
+      $('repli').textContent = 'L’adresse n’a pas pu être localisée précisément. La liste est établie à partir du code postal, sans école de secteur ni distance. Pour connaître votre école de secteur, adressez-vous à la ' + arr.mairie + '.';
+      $('repli').classList.remove('hidden');
+    }
+    if (annee === 'autre') $('autre-annee').classList.remove('hidden');
+
+    const resultats = construireShortlist({
+      ecoles,
+      arrondissement: arr.numero,
+      voisinage: [arr.numero, ...(cfg.adjacence[String(arr.numero)] ?? [])],
+      position: geo?.position ?? null,
+      secteurs: geo ? secteurs : [],
+      critere,
+    });
+    if (geo && secteurs.length && !resultats.some((r) => r.groupe === 'secteur')) {
+      $('repli').textContent = 'Aucun secteur trouvé pour cette adresse dans les données publiées. Renseignez-vous auprès de la ' + arr.mairie + '.';
+      $('repli').classList.remove('hidden');
+    }
+    if (resultats.length) afficherListe(resultats);
+    else {
+      $('vide').textContent = critere === '2ans'
+        ? 'Aucune école de ce secteur géographique n’a d’âge d’accueil relevé à 2 ans. Pour les écoles publiques, cette information dépend de l’arrondissement : voir le dossier sur la scolarisation à 2 ans.'
+        : 'Aucune école ne correspond à ce critère dans votre arrondissement et les arrondissements limitrophes.';
+      $('vide').classList.remove('hidden');
+    }
+    afficherEncart(arr.numero);
+
+    const form = $('capture') as HTMLFormElement;
+    (form.elements.namedItem('code_postal') as HTMLInputElement).value = cp ?? '';
+    (form.elements.namedItem('annee_naissance') as HTMLInputElement).value = annee;
+    (form.elements.namedItem('critere') as HTMLInputElement).value = critere;
+    (form.elements.namedItem('shortlist_uai') as HTMLInputElement).value = resultats.map((r) => r.ecole.id).join(';');
+  }
+
+  async function envoyer(e: SubmitEvent) {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const etat = $('capture-etat');
+    const d = new FormData(form);
+    etat.textContent = 'Envoi…';
+    try {
+      let ok: boolean;
+      if (cfg.hubspot) {
+        const p = cfg.hubspot.proprietes;
+        const fields = [
+          [p.email, d.get('email')],
+          [p.codePostal, d.get('code_postal')],
+          [p.anneeNaissance, d.get('annee_naissance')],
+          [p.source, cfg.source],
+          [p.shortlist, d.get('shortlist_uai')],
+        ].map(([name, value]) => ({ name, value: String(value ?? '') }));
+        const r = await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${cfg.hubspot.portalId}/${cfg.hubspot.formId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fields,
+            context: { pageUri: location.origin + location.pathname, pageName: document.title },
+            legalConsentOptions: { consent: { consentToProcess: true, text: '[TEXTE DE CONSENTEMENT HUBSPOT]' } },
+          }),
+        });
+        ok = r.ok;
+      } else {
+        const r = await fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(d as unknown as Record<string, string>).toString(),
+        });
+        ok = r.ok;
+      }
+      etat.textContent = ok ? 'C’est noté. Vous allez recevoir la sélection par email.' : 'L’envoi a échoué. Réessayez dans un instant.';
+      if (ok) form.reset();
+    } catch {
+      etat.textContent = 'L’envoi a échoué. Réessayez dans un instant.';
+    }
+  }
+
+  $('capture').addEventListener('submit', envoyer);
+  lancer();
+</script>

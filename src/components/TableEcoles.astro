@@ -1,0 +1,60 @@
+---
+import type { Ecole } from '../lib/types';
+import { afficherAge, NON_RENSEIGNE } from '../lib/enrichissement';
+interface Props { ecoles: Ecole[]; legende: string }
+const { ecoles, legende } = Astro.props;
+
+const statut = (e: Ecole) => (e.statut === 'public' ? 'Public' : e.contrat ? `Privé ${e.contrat}` : 'Privé');
+const nr = (v: string | null | undefined) => v ?? null;
+---
+<table class="table-ecoles" data-table-ecoles>
+  <caption>{legende}</caption>
+  <thead>
+    <tr>
+      <th scope="col">École</th>
+      <th scope="col">Adresse</th>
+      <th scope="col">Type</th>
+      <th scope="col">Statut</th>
+      <th scope="col">Langues</th>
+      <th scope="col">Pédagogie</th>
+      <th scope="col">Âge minimum</th>
+      <th scope="col">Contact</th>
+    </tr>
+  </thead>
+  <tbody>
+    {ecoles.map((e) => {
+      const en = e.enrichissement;
+      const langues = en?.langues?.join(', ') ?? null;
+      return (
+        <tr
+          data-statut={e.statut}
+          data-contrat={e.contrat ?? ''}
+          data-type={e.typeEtablissement}
+          data-langues={(en?.langues ?? []).join('|').toLowerCase()}
+          data-pedagogie={(en?.pedagogie ?? '').toLowerCase()}
+          data-age={en?.ageMinMois ?? ''}
+        >
+          <th scope="row">
+            {e.nom}
+            {e.origine === 'manuelle' && <span class="block text-xs font-normal text-gris">absente de l'annuaire officiel, ajoutée par l'éditeur</span>}
+          </th>
+          <td data-label="Adresse">{e.adresse}, {e.codePostal} Paris</td>
+          <td data-label="Type">{e.typeEtablissement}</td>
+          <td data-label="Statut">{statut(e)}</td>
+          <td data-label="Langues">{langues ?? <span class="nr">{NON_RENSEIGNE}</span>}</td>
+          <td data-label="Pédagogie">{nr(en?.pedagogie) ?? <span class="nr">{NON_RENSEIGNE}</span>}</td>
+          <td data-label="Âge minimum">
+            {en?.ageMinMois != null ? afficherAge(en.ageMinMois) : <span class="nr">{NON_RENSEIGNE}</span>}
+          </td>
+          <td data-label="Contact">
+            {e.telephone && <span class="block"><a href={`tel:${e.telephone.replace(/\s/g, '')}`}>{e.telephone}</a></span>}
+            {e.site && <span class="block"><a href={e.site} rel="nofollow">Site</a></span>}
+            {!e.telephone && !e.site && <span class="nr">{NON_RENSEIGNE}</span>}
+            {en && <span class="block text-xs text-gris">Relevé du {en.dateReleve}{en.confiance === 'à vérifier' && ', à vérifier'} (<a href={en.sourceUrl} rel="nofollow">source</a>)</span>}
+          </td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
+{ecoles.length === 0 && <p class="mt-4 rounded border border-ligne bg-white p-4 text-gris">Données en cours d'extraction.</p>}

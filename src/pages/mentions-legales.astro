@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../config';
+const e = SITE.editeur;
+---
+<Base title="Mentions légales | maternelle.paris" description="Mentions légales du site maternelle.paris, édité par M Education (École M).">
+  <div class="conteneur prose-site py-10">
+    <h1 class="text-3xl">Mentions légales</h1>
+    <h2>Éditeur</h2>
+    <p>
+      Le site maternelle.paris est édité par {e.raisonSociale}, {e.formeEtCapital}, dont le siège est situé {e.siege},
+      immatriculée sous le numéro SIREN {e.siren}. {e.raisonSociale} exploite le réseau d'écoles maternelles {e.nom} (<a href={e.url}>ecolem.fr</a>).
+    </p>
+    <p>Directeur de la publication : {e.directeurPublication}.</p>
+    <p>Contact : {e.contactRgpd}.</p>
+    <h2>Hébergeur</h2>
+    <p>{SITE.hebergeur}</p>
+    <h2>Nature du site</h2>
+    <p>
+      maternelle.paris est un annuaire indépendant. Ce n'est ni un service de la Ville de Paris, ni un service de l'Éducation nationale.
+      Il ne détermine pas officiellement l'école de secteur : seule la mairie d'arrondissement fait foi.
+    </p>
+    <h2>Sources des données</h2>
+    <p>
+      Annuaire de l'éducation (ministère de l'Éducation nationale) et secteurs scolaires des écoles maternelles (Ville de Paris),
+      réutilisés selon les termes de leur licence [LICENCE À CONFIRMER À LA LECTURE DES JEUX DE DONNÉES].
+    </p>
+  </div>
+</Base>

@@ -1,0 +1,56 @@
+---
+import { GA4_ID } from '../config';
+---
+<div id="consentement" class="fixed inset-x-0 bottom-0 z-50 hidden border-t border-ligne bg-white shadow-lg" role="region" aria-label="Consentement à la mesure d'audience">
+  <div class="conteneur flex flex-col gap-3 py-4 md:flex-row md:items-center md:justify-between">
+    <p class="text-sm">
+      Nous souhaitons mesurer l'audience de ce site avec Google Analytics. Rien n'est déposé ni mesuré sans votre accord.{' '}
+      <a href="/confidentialite/">En savoir plus</a>
+    </p>
+    <div class="flex shrink-0 gap-3">
+      <button type="button" class="bouton bouton-second" data-choix="refuse">Refuser</button>
+      <button type="button" class="bouton bouton-second" data-choix="accepte">Accepter</button>
+    </div>
+  </div>
+</div>
+<script is:inline define:vars={{ ga4: GA4_ID }}>
+  (function () {
+    var CLE = 'consentement-mesure';
+    var DUREE = 1000 * 60 * 60 * 24 * 182; // choix conservé 6 mois
+    var bandeau = document.getElementById('consentement');
+    function lire() {
+      try {
+        var v = JSON.parse(localStorage.getItem(CLE) || 'null');
+        return v && Date.now() - v.date < DUREE ? v.choix : null;
+      } catch (e) { return null; }
+    }
+    function ecrire(choix) {
+      try { localStorage.setItem(CLE, JSON.stringify({ choix: choix, date: Date.now() })); } catch (e) {}
+    }
+    function chargerGA() {
+      if (!ga4 || window.gtag) return;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ga4);
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
+      gtag('js', new Date());
+      gtag('config', ga4, { anonymize_ip: true });
+    }
+    function afficher() { bandeau.classList.remove('hidden'); }
+    bandeau.addEventListener('click', function (e) {
+      var choix = e.target && e.target.getAttribute('data-choix');
+      if (!choix) return;
+      ecrire(choix);
+      bandeau.classList.add('hidden');
+      if (choix === 'accepte') chargerGA();
+    });
+    document.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('[data-gerer-cookies]')) { e.preventDefault(); afficher(); }
+    });
+    var choix = lire();
+    if (choix === 'accepte') chargerGA();
+    else if (choix === null) afficher();
+  })();
+</script>

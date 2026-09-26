@@ -1,0 +1,66 @@
+---
+/** Filtres côté client. Masqués sans JavaScript : la table reste alors complète. */
+---
+<form class="mb-4 hidden flex-wrap gap-4 rounded border border-ligne bg-white p-4" data-filtres aria-label="Filtrer les écoles">
+  <label class="flex flex-col text-sm">Statut
+    <select class="champ mt-1" name="statut">
+      <option value="">Tous</option>
+      <option value="public">Public</option>
+      <option value="prive-sous">Privé sous contrat</option>
+      <option value="prive-hors">Privé hors contrat</option>
+    </select>
+  </label>
+  <label class="flex flex-col text-sm">Langue
+    <select class="champ mt-1" name="langue">
+      <option value="">Toutes</option>
+      <option value="anglais">Anglais</option>
+    </select>
+  </label>
+  <label class="flex flex-col text-sm">Pédagogie
+    <select class="champ mt-1" name="pedagogie">
+      <option value="">Toutes</option>
+      <option value="montessori">Montessori</option>
+    </select>
+  </label>
+  <label class="flex flex-col text-sm">Âge d'accueil
+    <select class="champ mt-1" name="age">
+      <option value="">Tous</option>
+      <option value="24">Dès 2 ans (renseigné)</option>
+    </select>
+  </label>
+  <p class="w-full text-sm text-gris" aria-live="polite" data-compte></p>
+</form>
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-filtres]');
+  const table = document.querySelector<HTMLTableElement>('[data-table-ecoles]');
+  if (form && table) {
+    form.classList.remove('hidden');
+    form.classList.add('flex');
+    const lignes = [...table.tBodies[0].rows];
+    const compte = form.querySelector('[data-compte]')!;
+    const appliquer = () => {
+      const f = new FormData(form);
+      const statut = String(f.get('statut'));
+      const langue = String(f.get('langue'));
+      const pedagogie = String(f.get('pedagogie'));
+      const age = String(f.get('age'));
+      let n = 0;
+      for (const tr of lignes) {
+        const d = tr.dataset;
+        const ok =
+          (!statut ||
+            (statut === 'public' && d.statut === 'public') ||
+            (statut === 'prive-sous' && d.contrat === 'sous contrat') ||
+            (statut === 'prive-hors' && d.contrat === 'hors contrat')) &&
+          (!langue || (d.langues ?? '').split('|').includes(langue)) &&
+          (!pedagogie || (d.pedagogie ?? '').includes(pedagogie)) &&
+          (!age || (d.age !== '' && Number(d.age) <= Number(age)));
+        tr.hidden = !ok;
+        if (ok) n++;
+      }
+      compte.textContent = `${n} école${n > 1 ? 's' : ''} affichée${n > 1 ? 's' : ''} sur ${lignes.length}. Les écoles dont l'attribut n'est pas renseigné sont masquées par un filtre sur cet attribut.`;
+    };
+    form.addEventListener('change', appliquer);
+    appliquer();
+  }
+</script>

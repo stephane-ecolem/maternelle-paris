@@ -1,0 +1,17 @@
+---
+import { SITE } from '../config';
+---
+<header class="border-b border-ligne bg-white">
+  <div class="conteneur flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3">
+    <div>
+      <a href="/" class="font-display text-xl font-semibold text-encre no-underline">{SITE.nom}</a>
+      <p class="text-sm text-gris">un service édité par <a href={SITE.editeur.url}>{SITE.editeur.nom}</a></p>
+    </div>
+    <nav aria-label="Navigation principale">
+      <ul class="flex flex-wrap gap-x-5 text-sm">
+        <li><a href="/#arrondissements">Arrondissements</a></li>
+        <li><a href="/dossier/scolarisation-2-ans/">Scolariser son enfant à 2 ans</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>

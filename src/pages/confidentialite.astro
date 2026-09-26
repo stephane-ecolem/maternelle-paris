@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../config';
+const e = SITE.editeur;
+---
+<Base title="Politique de confidentialité | maternelle.paris" description="Données collectées par maternelle.paris, finalités, base légale, durée de conservation et droits.">
+  <div class="conteneur prose-site py-10">
+    <h1 class="text-3xl">Politique de confidentialité</h1>
+    <h2>Responsable du traitement</h2>
+    <p>{e.raisonSociale}, {e.siege}. Contact : {e.contactRgpd}.</p>
+
+    <h2>Recherche par adresse</h2>
+    <p>
+      L'adresse que vous saisissez est envoyée depuis votre navigateur au service de géocodage public de l'État
+      (API Adresse) pour obtenir ses coordonnées. Elle n'est ni transmise à l'éditeur ni conservée par lui.
+    </p>
+
+    <h2>Envoi de la sélection par email</h2>
+    <p>Données collectées : email, code postal, année de naissance de l'enfant, critère choisi et liste des écoles sélectionnées.</p>
+    <p>Finalités : vous envoyer la sélection et le calendrier de la scolarisation à Paris, puis des informations sur la scolarisation en maternelle.</p>
+    <p>Base légale : votre consentement, recueilli par la case à cocher du formulaire. Vous pouvez le retirer à tout moment.</p>
+    <p>Durée de conservation : {SITE.conservationEmails}.</p>
+    <p>
+      Destinataires et sous-traitants : les données sont gérées dans HubSpot (HubSpot, Inc.), sous-traitant de {e.raisonSociale}.
+      Elles peuvent être transférées hors de l'Union européenne, notamment aux États-Unis, [GARANTIES DU TRANSFERT À CONFIRMER].
+    </p>
+
+    <h2>Mesure d'audience</h2>
+    <p>
+      Nous utilisons Google Analytics uniquement si vous l'acceptez dans le bandeau de consentement. Sans accord, aucun cookie de mesure
+      n'est déposé et aucun script de mesure n'est chargé. Votre choix est conservé six mois dans votre navigateur.
+      <a href="#" data-gerer-cookies>Modifier votre choix</a>.
+    </p>
+
+    <h2>Vos droits</h2>
+    <p>
+      Vous disposez d'un droit d'accès, de rectification, d'effacement, d'opposition, de limitation et de portabilité, ainsi que du
+      droit de retirer votre consentement. Écrivez à {e.contactRgpd}. Vous pouvez aussi introduire une réclamation auprès de la
+      <a href="https://www.cnil.fr/fr/plaintes">CNIL</a>.
+    </p>
+  </div>
+</Base>

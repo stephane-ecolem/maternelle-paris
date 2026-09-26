@@ -1,0 +1,20 @@
+---
+/**
+ * Encart éditeur : seul emplacement, avec le pied de page, où École M est mise
+ * en avant. Toujours étiqueté et visuellement distinct de la liste.
+ */
+import { SITE } from '../config';
+interface Props { ecoles: { nom: string; adresse: string; url?: string }[] }
+const { ecoles } = Astro.props;
+---
+{ecoles.length > 0 && (
+  <aside class="my-8 rounded-lg border-2 border-dashed border-gris bg-editeur p-5" aria-labelledby="encart-editeur-titre">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gris">Encart de l'éditeur</p>
+    <h2 id="encart-editeur-titre" class="mt-1 text-lg">Les écoles de {SITE.editeur.nom}, éditeur de ce site</h2>
+    <span class="mt-2 inline-block rounded border border-ligne bg-white px-3 py-1 font-display text-sm">[LOGO ÉCOLE M]</span>
+    <ul class="mt-3 space-y-1">
+      {ecoles.map((e) => <li><strong>{e.nom}</strong>, {e.adresse}{e.url && <> · <a href={e.url}>site de l'école</a></>}</li>)}
+    </ul>
+    <p class="mt-3 text-sm text-gris">Cet encart est publié par l'éditeur. Il n'influence ni la liste ni son ordre.</p>
+  </aside>
+)}

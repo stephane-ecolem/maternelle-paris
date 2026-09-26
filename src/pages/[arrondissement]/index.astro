@@ -1,0 +1,83 @@
+---
+import Base from '../../layouts/Base.astro';
+import TableEcoles from '../../components/TableEcoles.astro';
+import FiltresEcoles from '../../components/FiltresEcoles.astro';
+import MentionDonnees from '../../components/MentionDonnees.astro';
+import EncartEditeur from '../../components/EncartEditeur.astro';
+import { ecolesMPour } from '../../lib/encart';
+import { ARRONDISSEMENTS, libelle, type Arrondissement } from '../../lib/arrondissements';
+import { limitrophes } from '../../lib/adjacence';
+import { ecolesDe } from '../../lib/donnees';
+import { SITE } from '../../config';
+import { INTROS } from '../../data/intros';
+
+export function getStaticPaths() {
+  return ARRONDISSEMENTS.map((a) => ({ params: { arrondissement: a.slug }, props: { a } }));
+}
+
+interface Props { a: Arrondissement }
+const { a } = Astro.props;
+const ecoles = ecolesDe(a.numero);
+const nPublic = ecoles.filter((e) => e.statut === 'public').length;
+const nPrive = ecoles.length - nPublic;
+const voisins = limitrophes(a.numero).map((n) => ARRONDISSEMENTS[n - 1]);
+const url = `${SITE.url}/${a.slug}/`;
+
+// Titles et descriptions : à réécrire un par un avec les chiffres réels (jalon 3).
+const title = `Écoles maternelles du ${libelle(a)} de Paris : liste complète`;
+const description = `Les écoles maternelles publiques et privées du ${libelle(a)} de Paris : adresses, statut, langues, pédagogie et âge d'accueil.`;
+
+const itemList = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: `Écoles maternelles du ${libelle(a)} de Paris`,
+  url,
+  numberOfItems: ecoles.length,
+  itemListElement: ecoles.map((e, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: {
+      '@type': 'School',
+      name: e.nom,
+      ...(e.site ? { url: e.site } : {}),
+      address: { '@type': 'PostalAddress', streetAddress: e.adresse, postalCode: e.codePostal, addressLocality: 'Paris', addressCountry: 'FR' },
+    },
+  })),
+};
+---
+<Base {title} {description} jsonLd={[itemList]}>
+  <div class="conteneur py-8">
+    <nav aria-label="Fil d'Ariane" class="text-sm"><a href="/">Accueil</a> › {libelle(a)}</nav>
+    <h1 class="mt-3 text-3xl md:text-4xl">Les maternelles du {libelle(a)}</h1>
+    <p class="mt-2 text-lg">
+      {ecoles.length > 0
+        ? `${ecoles.length} établissements accueillent des enfants en maternelle dans le ${libelle(a)} : ${nPublic} publics et ${nPrive} privés.`
+        : `Liste des établissements accueillant des enfants en maternelle dans le ${libelle(a)} de Paris.`}
+    </p>
+    <div class="prose-site mt-4">
+      <p>{INTROS[a.numero] ?? '[INTRODUCTION SPÉCIFIQUE À RÉDIGER, 150 MOTS MAXIMUM]'}</p>
+      <p>
+        Cette liste ne détermine pas l'école de secteur. Pour la connaître à partir de votre adresse, utilisez
+        <a href="/#shortlist">la recherche par adresse</a>, puis confirmez auprès de la {a.mairie}.
+      </p>
+    </div>
+    <div class="mt-4"><MentionDonnees /></div>
+
+    <section class="mt-8" aria-labelledby="liste">
+      <h2 id="liste" class="mb-4 text-2xl">Liste des écoles</h2>
+      <FiltresEcoles />
+      <TableEcoles {ecoles} legende={`Écoles maternelles et primaires avec classes maternelles, ${libelle(a)}, par ordre alphabétique`} />
+    </section>
+
+    <EncartEditeur ecoles={ecolesMPour(a.numero)} />
+
+    {voisins.length > 0 && (
+      <section class="mt-10" aria-labelledby="voisins">
+        <h2 id="voisins" class="text-xl">Arrondissements limitrophes</h2>
+        <ul class="mt-2 flex flex-wrap gap-x-5 gap-y-1">
+          {voisins.map((v) => <li><a href={`/${v.slug}/`}>Maternelles du {libelle(v)}</a></li>)}
+        </ul>
+      </section>
+    )}
+  </div>
+</Base>

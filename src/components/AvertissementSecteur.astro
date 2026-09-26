@@ -1,0 +1,8 @@
+---
+import { SITE } from '../config';
+import { META, formaterDate } from '../lib/donnees';
+---
+<p class="rounded border-l-4 border-accent bg-accent-pale p-3 text-sm">
+  Les secteurs scolaires sont révisés chaque année par la Ville de Paris. Date d'extraction des secteurs affichés : {formaterDate(META.secteurs)}.
+  Confirmez toujours votre école de secteur auprès de la mairie de votre arrondissement. Plus d'informations sur <a href={SITE.parisFrSecteur}>paris.fr</a>.
+</p>

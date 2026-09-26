@@ -1,0 +1,62 @@
+---
+import '../styles/global.css';
+import EnTete from '../components/EnTete.astro';
+import PiedDePage from '../components/PiedDePage.astro';
+import BandeauConsentement from '../components/BandeauConsentement.astro';
+import { SITE } from '../config';
+
+interface Props {
+  title: string;
+  description: string;
+  jsonLd?: object[];
+  noindex?: boolean;
+}
+const { title, description, jsonLd = [], noindex = false } = Astro.props;
+const canonique = new URL(Astro.url.pathname, SITE.url).href;
+
+const organisation = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': `${SITE.url}/#editeur`,
+  name: SITE.editeur.nom,
+  legalName: SITE.editeur.raisonSociale,
+  url: SITE.editeur.url,
+  address: { '@type': 'PostalAddress', streetAddress: '9 rue Bernoulli', postalCode: '75008', addressLocality: 'Paris', addressCountry: 'FR' },
+};
+const siteWeb = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE.nom,
+  url: SITE.url,
+  inLanguage: 'fr-FR',
+  publisher: { '@id': `${SITE.url}/#editeur` },
+};
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonique} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonique} />
+    <meta property="og:site_name" content={SITE.nom} />
+    {[organisation, siteWeb, ...jsonLd].map((d) => <script type="application/ld+json" set:html={JSON.stringify(d)} />)}
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <a href="#contenu" class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-white focus:p-2">Aller au contenu</a>
+    <EnTete />
+    <main id="contenu" class="flex-1">
+      <slot />
+    </main>
+    <PiedDePage />
+    <BandeauConsentement />
+  </body>
+</html>

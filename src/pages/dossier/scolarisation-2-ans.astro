@@ -1,0 +1,49 @@
+---
+import Base from '../../layouts/Base.astro';
+import { SITE } from '../../config';
+
+const title = 'Scolariser son enfant à 2 ans à Paris : conditions et démarches';
+const description = '[META DESCRIPTION À ÉCRIRE AU JALON 5]';
+const auteur = SITE.auteurDossier;
+
+// Questions et réponses sourcées, reprises dans le JSON-LD FAQPage (jalon 5).
+const faq: { q: string; r: string }[] = [];
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Scolariser son enfant à 2 ans à Paris',
+  inLanguage: 'fr-FR',
+  author: { '@type': 'Person', name: auteur.nom, jobTitle: auteur.fonction, worksFor: { '@id': `${SITE.url}/#editeur` } },
+  publisher: { '@id': `${SITE.url}/#editeur` },
+};
+const faqPage = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.r } })),
+};
+---
+<Base {title} {description} jsonLd={faq.length ? [article, faqPage] : [article]}>
+  <article class="conteneur py-8">
+    <nav aria-label="Fil d'Ariane" class="text-sm"><a href="/">Accueil</a> › Dossier</nav>
+    <h1 class="mt-3 max-w-3xl text-3xl md:text-4xl">Scolariser son enfant à 2 ans à Paris</h1>
+    <p class="mt-3 text-gris">Par {auteur.nom}, {auteur.fonction} chez {SITE.editeur.nom}</p>
+    <div class="prose-site mt-6">
+      <p>[CONTENU DU DOSSIER, 1 200 À 1 800 MOTS, RÉDIGÉ AU JALON 5. CHAQUE AFFIRMATION RÉGLEMENTAIRE SOURCÉE ET LIÉE.]</p>
+      <h2>Pour aller plus loin</h2>
+      <ul>
+        <li>Coût de la scolarité : <a href={SITE.liensEcoleM.prix}>guide publié sur ecolem.fr</a></li>
+        <li>Choisir une école : <a href={SITE.liensEcoleM.choix}>guide publié sur ecolem.fr</a></li>
+        <li>Déménager à Paris avec un enfant : <a href={SITE.liensEcoleM.demenagement}>guide publié sur ecolem.fr</a></li>
+      </ul>
+    </div>
+    <aside class="prose-site mt-10 flex gap-4 border-t border-ligne pt-6" aria-label="À propos de l'auteure">
+      {auteur.photo ? <img src={auteur.photo} alt={auteur.nom} width="96" height="96" class="h-24 w-24 rounded-full object-cover" /> : <span class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-accent-pale text-xs">[PHOTO]</span>}
+      <div>
+        <p class="font-semibold">{auteur.nom}</p>
+        <p class="text-sm text-gris">{auteur.fonction}, {SITE.editeur.nom}</p>
+        <p class="text-sm">{auteur.bio}</p>
+      </div>
+    </aside>
+  </article>
+</Base>
