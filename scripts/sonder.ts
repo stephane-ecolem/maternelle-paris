@@ -4,6 +4,9 @@
  */
 const SOURCES = [
   { nom: 'Annuaire de l\'éducation', base: 'https://data.education.gouv.fr/api/explore/v2.1', dataset: 'fr-en-annuaire-education' },
+  { nom: 'Secteurs scolaires maternelles', base: 'https://opendata.paris.fr/api/explore/v2.1', dataset: 'secteurs-scolaires-maternelles' },
+  { nom: 'Établissements maternelles Ville de Paris', base: 'https://opendata.paris.fr/api/explore/v2.1', dataset: 'etablissements-scolaires-maternelles' },
+  { nom: 'Arrondissements', base: 'https://opendata.paris.fr/api/explore/v2.1', dataset: 'arrondissements' },
 ];
 const RECHERCHES = [
   { nom: 'Secteurs scolaires maternelles', base: 'https://opendata.paris.fr/api/explore/v2.1', q: 'secteurs scolaires maternelles' },
